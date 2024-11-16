@@ -23,7 +23,7 @@ export const fetchQuestions = async (
     const response = await axios.get<FetchQuestionsResponse>(
       `${API_BASE_URL}/questions`,
       {
-        params: { selectedDaos: selectedDaos.join(",") },
+        params: { selectedDaos },
       }
     );
     return response.data;

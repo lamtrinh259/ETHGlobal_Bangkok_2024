@@ -21,21 +21,48 @@ export default function OnboardingFirstPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDaos, setSelectedDaos] = useState<string[]>([]);
 
-  let privateKey: `0x${string}` | null = localStorage.getItem("cachedValue") as
-    | `0x${string}`
-    | null;
-  if (!privateKey) {
-    privateKey = generatePrivateKey();
-    // todo call backend to airdrop tokens
-  }
-
-  const account = privateKeyToAccount(`${privateKey}`);
-  localStorage.setItem("cachedValue", privateKey);
-
   // TODO: POPUP for gaining voting right
 
   useEffect(() => {
     if (sdkHasLoaded && isLoggedIn && primaryWallet) {
+      let privateKey: `0x${string}` | null = localStorage.getItem(
+        primaryWallet?.address || ""
+      ) as `0x${string}` | null;
+      if (!privateKey) {
+        privateKey = generatePrivateKey();
+        localStorage.setItem(primaryWallet?.address, privateKey);
+        // todo call backend to airdrop tokens
+      }
+
+      const wallet = privateKeyToAccount(privateKey);
+
+      const generateWalletAndAirdrop = async () => {
+        // Call backend for airdrop
+        try {
+          const response = await fetch("http://152.53.36.131:9999/airdrop", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              walletAddress: wallet.address,
+              signature: "0x",
+            }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            console.log("Airdrop successful!", {
+              tokenTx: data.tokenTxHash,
+              ethTx: data.ethTxHash,
+            });
+          }
+        } catch (error) {
+          console.error("Airdrop failed:", error);
+        }
+      };
+
+      generateWalletAndAirdrop();
       setIsLoading(false);
     } else {
       setIsLoading(true);
