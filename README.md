@@ -19,6 +19,7 @@
 The customer journey for user that wants to use agents for voting will be like this:
 
 
+
 ## Future Work
 Some thoughts for how the whole project can be built out further:
 

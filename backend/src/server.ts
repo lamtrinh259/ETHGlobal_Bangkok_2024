@@ -27,9 +27,9 @@ app.post('/proposals', async (req: Request, res: Response) => {
   let { chatHistory, selectedDaos, id } = req.body;
   if (!id) { id = 0; }
 
-  if (!Array.isArray(selectedDaos) || selectedDaos.length !== 1 || selectedDaos[0].toLowerCase() !== 'charitydao') {
+  if (!Array.isArray(selectedDaos) || selectedDaos.length !== 1 || selectedDaos[0].toLowerCase() !== 'CharityDAO') {
     res.status(400).json({
-      error: 'Invalid selectedDaos. Only ["charitydao"] is currently supported.'
+      error: 'Invalid selected Daos. Only ["CharityDAO"] is currently supported.'
     });
   }
 
@@ -43,8 +43,12 @@ app.post('/proposals', async (req: Request, res: Response) => {
     });
   }
   try {
-    const systemPrompt = `You are an AI voting assistant. Based on the user's preferences and chat history, recommend how to vote on the following DAO proposals Question: ${filteredProposals[0].description}. Provide your output as correcto formatted JSON  "{vote: Yes|No, reasoning: reason}" with vote being Yes or No and reason being a short reason why yes or no. Your only answer must be the valid json as described above.`;
-  
+    const systemPrompt = `You are an AI agent whose job is to vote on DAO governance proposals, in particular this proposal:" ${filteredProposals[0].description}" on behalf of the users.
+                           You will receive a conversation from users as inputs to instruct you on the user's preferences and chat history.
+                           Your role is to choose the decision that aligns the most with the user's preferences.
+                           There's no right or wrong answer, but the output must be in this JSON format "{vote: Yes|No|Abstain, reasoning: reason}" with vote being Yes or No or Abstain and reason being a short 1-2 sentences describing the reason why.
+                           Your only answer must be the valid json as described above.`;
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
