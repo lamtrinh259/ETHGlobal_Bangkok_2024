@@ -7,10 +7,12 @@ from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
+from openai import OpenAI
 
 # Import CDP Agentkit Langchain Extension.
 from cdp_langchain.agent_toolkits import CdpToolkit
 from cdp_langchain.utils import CdpAgentkitWrapper
+from langchain_core.prompts import ChatPromptTemplate
 from cdp_langchain.tools import CdpTool
 from pydantic import BaseModel, Field
 from cdp import *
@@ -18,11 +20,16 @@ from cdp import *
 # Configure a file to persist the agent's CDP MPC Wallet Data.
 wallet_data_file = "wallet_data.txt"
 
+client = OpenAI(
+  organization='org-XerYJx3Ux9BZAeCo0VSu3y3Z',
+  project='proj_8XC3v1clv3MqHnjGkT3igU7Q',
+)
+
 
 def initialize_agent():
     """Initialize the agent with CDP Agentkit."""
     # Initialize LLM.
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model="gpt-4o") # gpt-4o-mini
 
     wallet_data = None
 
@@ -51,15 +58,89 @@ def initialize_agent():
     memory = MemorySaver()
     config = {"configurable": {"thread_id": "CDP Agentkit Chatbot Example!"}}
 
+    # System message to instruct agent to support with
+    system_prompt = "You are an AI agent whose job is to vote on DAO governance proposals on behalf of the users. You will receive a conversation from users as inputs to instruct you on the user's preferences, your role is to choose the decide on which vote would align the most with the user's preferences. There's no right or wrong answer, but the output must be in the form of a numeric integer in this list [0, 1, 2]. 0 refers to 'Yes,' 1 refers to 'No', and 2 is 'Abstain from voting'"
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     return create_react_agent(
         llm,
         tools=tools,
         checkpointer=memory,
-        state_modifier=
-        "You are a helpful agent that can interact onchain using the Coinbase Developer Platform Agentkit. You are empowered to interact onchain using your tools. If you ever need funds, you can request them from the faucet if you are on network ID `base-sepolia`. If not, you can provide your wallet details and request funds from the user. If someone asks you to do something you can't do with your currently available tools, you must say so, and encourage them to implement it themselves using the CDP SDK + Agentkit, recommend they go to docs.cdp.coinbase.com for more informaton. Be concise and helpful with your responses. Refrain from restating your tools' descriptions unless it is explicitly requested.",
+        state_modifier=system_prompt # modify the system prompt above as needed
+      #   "You are a helpful agent that can interact onchain using the Coinbase Developer Platform Agentkit. You are empowered to interact onchain using your tools. If you ever need funds, you can request them from the faucet if you are on network ID `base-sepolia`. If not, you can provide your wallet details and request funds from the user. If someone asks you to do something you can't do with your currently available tools, you must say so, and encourage them to implement it themselves using the CDP SDK + Agentkit, recommend they go to docs.cdp.coinbase.com for more informaton. Be concise and helpful with your responses. Refrain from restating your tools' descriptions unless it is explicitly requested.",
     ), config
 
+
+def agent_decide_on_vote(conversation: str) -> int:
+    """
+    Decide on a vote based on the user's preferences in the conversation.
+    Uses the updated OpenAI API with the gpt-4-turbo model.
+    """
+    # System message to instruct the agent
+    system_message = {
+        "role": "system",
+        "content": (
+            "You are an AI agent whose job is to vote on DAO governance proposals on behalf of the users. "
+            "You will receive a conversation from users as inputs to instruct you on the user's preferences. "
+            "Your role is to choose the decision that aligns the most with the user's preferences. "
+            "There's no right or wrong answer, but the output must be in the form of a numeric integer in this list [0, 1, 2]. "
+            "0 refers to 'Yes,' 1 refers to 'No', and 2 is 'Abstain from voting'."
+        )
+    }
+
+    # User message containing the conversation
+    user_message = {
+        "role": "user",
+        "content": conversation
+    }
+
+    try:
+        # Call the OpenAI API
+        response = openai.ChatCompletion.create(
+            model="gpt-4-turbo",  # Use the required model
+            messages=[system_message, user_message],
+            max_tokens=10,  # Response limited to a short answer
+            temperature=0  # Deterministic responses
+        )
+
+        # Extract and validate the decision
+        decision_content = response.choices[0].message["content"].strip()
+        decision = int(decision_content)
+
+        if decision not in [0, 1, 2]:
+            raise ValueError(f"Invalid decision: {decision_content}")
+
+        return decision
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while deciding on the vote: {e}")
+
+def agent_decide_on_vote_langchain(conversation: str) -> int:
+    """Decide on a vote based on the user's preferences in the conversation."""
+    # Initialize LLM
+    llm = ChatOpenAI(model="gpt-4o")
+
+    # System message to instruct agent on decision-making
+    system_prompt = (
+        "You are an AI agent whose job is to vote on DAO governance proposals on behalf of the users. "
+        "You will receive a conversation from users as inputs to instruct you on the user's preferences, "
+        "your role is to choose the decision that aligns the most with the user's preferences. "
+        "There's no right or wrong answer, but the output must be in the form of a numeric integer in this list [0, 1, 2]. "
+        "0 refers to 'Yes,' 1 refers to 'No', and 2 is 'Abstain from voting'."
+    )
+
+    # Create a prompt template using the correct format
+    prompt_template = ChatPromptTemplate([
+        ("system", system_prompt),
+        ("human", conversation)
+    ])
+
+    # Generate a response from the LLM
+    response = llm.generate(prompt_template)
+
+    # Extract the decision from the response
+    decision = int(response.content.strip())
+
+    return decision
 
 # Autonomous Mode
 def run_autonomous_mode(agent_executor, config, interval=10):
