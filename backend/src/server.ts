@@ -37,6 +37,16 @@ app.post('/proposals', async (req: any, res: any) => {
     });
   }
 
+  if (!Array.isArray(chatHistory) || !chatHistory.every(msg => 
+    msg.role && 
+    ['user', 'assistant'].includes(msg.role) && 
+    typeof msg.content === 'string'
+  )) {
+    return res.status(400).json({
+      error: 'Invalid chat history format. Each message must have role (user/assistant) and content'
+    });
+  }
+
   const filteredProposals = mockProposals
     .filter(p => p.dao.toLowerCase() === selectedDaos[0].toLowerCase())
     .filter(p => !id || p.id === id);
@@ -115,7 +125,7 @@ app.get('/questions', (req: any, res: any) => {
 });
 
 app.post('/airdrop', async (req: any, res: any) => {
-  const { walletAddress, signature } = req.body;
+  const { walletAddress, signature } = req.body; //todo: validate signature
 
   if (!walletAddress || !ethers.isAddress(walletAddress)) {
     return res.status(400).json({
@@ -151,7 +161,7 @@ app.post('/airdrop', async (req: any, res: any) => {
 });
 
 
-const PORT = 9990;
+const PORT = 9999;
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
