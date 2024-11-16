@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import DaoOption, { DaoOptionType } from "./DaoOption";
 import NextLink from "next/link";
+import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
 
 /**
  * Use the page component to wrap the components
@@ -19,6 +20,17 @@ export default function OnboardingFirstPage() {
   const { sdkHasLoaded, primaryWallet } = useDynamicContext();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDaos, setSelectedDaos] = useState<string[]>([]);
+
+  let privateKey: `0x${string}` | null = localStorage.getItem("cachedValue") as
+    | `0x${string}`
+    | null;
+  if (!privateKey) {
+    privateKey = generatePrivateKey();
+    // todo call backend to airdrop tokens
+  }
+
+  const account = privateKeyToAccount(`${privateKey}`);
+  localStorage.setItem("cachedValue", privateKey);
 
   // TODO: POPUP for gaining voting right
 
@@ -50,7 +62,7 @@ export default function OnboardingFirstPage() {
       totalMembers: "139.5k",
     },
     {
-      title: "Web3 for Good DAO",
+      title: "CharityDAO",
       iconUrl: "https://nouns.wtf/static/media/noggles.7644bfd0.svg",
       tags: ["Community", "Chain"],
       totalMembers: "139.5k",
