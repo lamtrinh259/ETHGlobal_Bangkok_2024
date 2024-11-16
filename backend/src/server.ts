@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import OpenAI from "openai";
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import express from 'express';
 import { mockProposals } from './proposals.js';
 import { mockQuestions } from './questions.js';
@@ -16,22 +15,35 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const openAIKey = process.env.OPENAI_API_KEY
+const privateKey = process.env.PRIVATE_KEY
+const rpcUrl = process.env.RPC_URL
+const voteTokenAddress = process.env.VOTE_TOKEN_ADDRESS
 
-if (openAIKey === undefined || !openAIKey) {
-  throw new Error("openAI");
+if (voteTokenAddress == undefined || openAIKey === undefined || !openAIKey || privateKey === undefined || !privateKey || rpcUrl === undefined || !rpcUrl) {
+  throw new Error(".env not set - requires OPENAI_API_KEY, PRIVATE_KEY, and RPC_URL");
 }
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-app.post('/proposals', async (req: Request, res: Response) => {
+app.post('/proposals', async (req: any, res: any) => {
   let { chatHistory, selectedDaos, id } = req.body;
   if (!id) { id = 0; }
 
-  if (!Array.isArray(selectedDaos) || selectedDaos.length !== 1 || selectedDaos[0].toLowerCase() !== 'CharityDAO') {
-    res.status(400).json({
-      error: 'Invalid selected Daos. Only ["CharityDAO"] is currently supported.'
+  if (!Array.isArray(selectedDaos) || selectedDaos.length !== 1 || selectedDaos[0].toLowerCase() !== 'charitydao') {
+    return res.status(400).json({
+      error: 'Invalid selectedDaos. Only ["charitydao"] is currently supported.'
+    });
+  }
+
+  if (!Array.isArray(chatHistory) || !chatHistory.every(msg =>
+    msg.role &&
+    ['user', 'assistant'].includes(msg.role) &&
+    typeof msg.content === 'string'
+  )) {
+    return res.status(400).json({
+      error: 'Invalid chat history format. Each message must have role (user/assistant) and content'
     });
   }
 
@@ -40,7 +52,7 @@ app.post('/proposals', async (req: Request, res: Response) => {
     .filter(p => !id || p.id === id);
 
   if (filteredProposals.length === 0) {
-    res.status(400).json({
+    return res.status(400).json({
       error: `No proposals found for selected DAO and ID`
     });
   }
@@ -62,30 +74,47 @@ app.post('/proposals', async (req: Request, res: Response) => {
     });
 
     const aiResponse = completion.choices[0].message.content;
-    console.log(aiResponse)
+    if (!aiResponse) {
+      return res.status(400).json({ error: 'Empty response from AI' });
+    }
+
+    const parsedResponse = JSON.parse(aiResponse);
+
+    if (!parsedResponse.vote || !parsedResponse.reasoning ||
+      !['YES', 'NO', 'ABSTAIN'].includes(parsedResponse.vote.toUpperCase())) {
+      return res.status(400).json({ error: 'Invalid AI response format' });
+    }
+
+    const voteToNumber: { [key: string]: number } = {
+      'YES': 0,
+      'NO': 1,
+      'ABSTAIN': 2
+    };
+
+
     const proposalsWithRecommendations = filteredProposals.map(proposal => ({
-      dao: filteredProposals[0].dao,
-      description: filteredProposals[0].description,
-      vote: 'Yes',
-      reasoning: aiResponse,
+      dao: proposal.dao,
+      description: proposal.description,
+      vote: voteToNumber[parsedResponse.vote.toUpperCase()],
+      reasoning: parsedResponse.reasoning,
     }));
 
     res.json({ proposals: proposalsWithRecommendations });
 
   } catch (error) {
     console.error('Error calling OpenAI:', error);
-    res.status(500).json({ error: 'Failed to process proposals' });
+    return res.status(500).json({ error: 'Failed to process proposals' });
   }
 });
 
-app.get('/questions', (req: Request, res: Response) => {
+app.get('/questions', (req: any, res: any) => {
   const { selectedDaos } = req.query;
 
   if (!Array.isArray(selectedDaos) ||
     selectedDaos.length !== 1 ||
     typeof selectedDaos[0] !== 'string' ||
     selectedDaos[0].toString().toLowerCase() !== 'charitydao') {
-    res.status(400).json({
+    return res.status(400).json({
       error: 'Invalid selectedDaos. Only ["charitydao"] is currently supported.'
     });
   }
@@ -95,41 +124,44 @@ app.get('/questions', (req: Request, res: Response) => {
   });
 });
 
-app.post('/airdrop', async (req: Request, res: Response) => {
-  const { walletAddress, signature } = req.body;
+app.post('/airdrop', async (req: any, res: any) => {
+  const { walletAddress, signature } = req.body; //todo: validate signature
 
   if (!walletAddress || !ethers.isAddress(walletAddress)) {
-    res.status(400).json({
+    return res.status(400).json({
       error: 'Invalid selectedDaos. Only ["charitydao"] is currently supported.'
     });
   }
 
   try {
-    const provider = new ethers.JsonRpcProvider('YOUR_RPC_URL');
-    const privateKey = process.env.PRIVATE_KEY;
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
     const signer = new ethers.Wallet(privateKey!, provider);
-
-    const contractAddress = 'YOUR_CONTRACT_ADDRESS';
     const abi = ['function airdrop(address to, uint256 amount) external'];
-    const contract = new ethers.Contract(contractAddress, abi, signer);
+    const contract = new ethers.Contract(voteTokenAddress, abi, signer);
 
-    const amount = ethers.parseEther('100'); // Amount to airdrop
-    const tx = await contract.airdrop(walletAddress, amount);
-    await tx.wait();
+    const amount = ethers.parseEther('1');
+    const tx1 = await contract.airdrop(walletAddress, amount);
+    await tx1.wait();
+    const tx2 = await signer.sendTransaction({
+      to: walletAddress,
+      value: ethers.parseEther('0.01')
+    });
+    await tx2.wait();
 
     res.json({
       success: true,
-      txHash: tx.hash
+      tokenTxHash: tx1.hash,
+      ethTxHash: tx2.hash
     });
 
   } catch (error) {
     console.error('Airdrop error:', error);
-    res.status(500).json({ error: 'Failed to process airdrop' });
+    return res.status(500).json({ error: 'Failed to process airdrop' });
   }
 });
 
 
-const PORT = 9990;
+const PORT = 9999;
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

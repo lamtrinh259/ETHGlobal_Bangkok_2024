@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://your-backend.com/api";
+const API_BASE_URL = "http://152.53.36.131:9999";
 
 export interface Question {
   id: string;
