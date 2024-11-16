@@ -1,3 +1,0 @@
-[submodule "cdp-agentkit"]
-	path = cdp-agentkit
-	url = git@github.com:coinbase/cdp-agentkit.git
