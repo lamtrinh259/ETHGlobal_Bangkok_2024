@@ -1,7 +1,5 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://152.53.36.131:9999";
-
 export interface Question {
   id: string;
   text: string;
@@ -21,7 +19,7 @@ export const fetchQuestions = async (
 ): Promise<FetchQuestionsResponse> => {
   try {
     const response = await axios.get<FetchQuestionsResponse>(
-      `${API_BASE_URL}/questions`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/questions`,
       {
         params: { selectedDaos },
       }
