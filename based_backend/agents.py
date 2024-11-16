@@ -20,12 +20,6 @@ from cdp import *
 # Configure a file to persist the agent's CDP MPC Wallet Data.
 wallet_data_file = "wallet_data.txt"
 
-client = OpenAI(
-  organization='org-XerYJx3Ux9BZAeCo0VSu3y3Z',
-  project='proj_8XC3v1clv3MqHnjGkT3igU7Q',
-)
-
-
 def initialize_agent():
     """Initialize the agent with CDP Agentkit."""
     # Initialize LLM.
@@ -69,41 +63,47 @@ def initialize_agent():
       #   "You are a helpful agent that can interact onchain using the Coinbase Developer Platform Agentkit. You are empowered to interact onchain using your tools. If you ever need funds, you can request them from the faucet if you are on network ID `base-sepolia`. If not, you can provide your wallet details and request funds from the user. If someone asks you to do something you can't do with your currently available tools, you must say so, and encourage them to implement it themselves using the CDP SDK + Agentkit, recommend they go to docs.cdp.coinbase.com for more informaton. Be concise and helpful with your responses. Refrain from restating your tools' descriptions unless it is explicitly requested.",
     ), config
 
-
 def agent_decide_on_vote(conversation: str) -> int:
     """
     Decide on a vote based on the user's preferences in the conversation.
-    Uses the updated OpenAI API with the gpt-4-turbo model.
+    Uses the updated OpenAI API with the gpt-4o model.
     """
-    # System message to instruct the agent
-    system_message = {
-        "role": "system",
-        "content": (
-            "You are an AI agent whose job is to vote on DAO governance proposals on behalf of the users. "
-            "You will receive a conversation from users as inputs to instruct you on the user's preferences. "
-            "Your role is to choose the decision that aligns the most with the user's preferences. "
-            "There's no right or wrong answer, but the output must be in the form of a numeric integer in this list [0, 1, 2]. "
-            "0 refers to 'Yes,' 1 refers to 'No', and 2 is 'Abstain from voting'."
-        )
-    }
-
-    # User message containing the conversation
-    user_message = {
-        "role": "user",
-        "content": conversation
-    }
+    client = OpenAI(
+      organization='org-XerYJx3Ux9BZAeCo0VSu3y3Z',
+      project='proj_8XC3v1clv3MqHnjGkT3igU7Q',
+      )
 
     try:
-        # Call the OpenAI API
-        response = openai.ChatCompletion.create(
-            model="gpt-4-turbo",  # Use the required model
+        # Define the system message (instructions for the assistant)
+        system_message = {
+            "role": "system",
+            "content": (
+                "You are an AI agent whose job is to vote on DAO governance proposals on behalf of the users. "
+                "You will receive a conversation from users as inputs to instruct you on the user's preferences. "
+                "Your role is to choose the decision that aligns the most with the user's preferences. "
+                "There's no right or wrong answer, but the output must be in the form of a numeric integer in this list [0, 1, 2]. "
+                "0 refers to 'Yes,' 1 refers to 'No', and 2 is 'Abstain from voting'."
+            )
+        }
+
+        # Define the user message (conversation provided by the user)
+        user_message = {
+            "role": "user",
+            "content": conversation
+        }
+
+        # Make the API call
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Use the desired model
             messages=[system_message, user_message],
-            max_tokens=10,  # Response limited to a short answer
-            temperature=0  # Deterministic responses
+            max_tokens=10,  # Limit the output to a short answer
+            temperature=0  # Set temperature for deterministic responses
         )
+      #   print('the response is', response)
 
         # Extract and validate the decision
-        decision_content = response.choices[0].message["content"].strip()
+        decision_content = response.choices[0].message.content.strip()
+      #   print('the decision content is', decision_content)
         decision = int(decision_content)
 
         if decision not in [0, 1, 2]:
@@ -113,6 +113,7 @@ def agent_decide_on_vote(conversation: str) -> int:
 
     except Exception as e:
         raise RuntimeError(f"An error occurred while deciding on the vote: {e}")
+
 
 def agent_decide_on_vote_langchain(conversation: str) -> int:
     """Decide on a vote based on the user's preferences in the conversation."""
