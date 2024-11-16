@@ -6,9 +6,9 @@ EVENT_TYPE_COMPLETED: Final[str] = "completed"
 EVENT_TYPE_TOOLS: Final[str] = "tools"
 EVENT_TYPE_ERROR: Final[str]= "error"
 
-# Environment variables
-WALLET_ID_ENV_VAR: Final[str] = "CDP_WALLET_ID"
-WALLET_SEED_ENV_VAR: Final[str] = "CDP_WALLET_SEED"
+# Environment variables for Base Sepolia wallet generated on Replit
+WALLET_ID_ENV_VAR: Final[str] = "bf3e5492-0308-4d90-a273-093d5edf4c95"
+WALLET_SEED_ENV_VAR: Final[str] = "7dad01d2f0db9c16c8093e3d6f2ececfd4a8ae5c883987063716be931071ac51cd2fd2b63fb3c363f97488f08d842cc13eb837bc7724c07fce2d50fae7f66289"
 
 # Errors
 class InputValidationError(Exception):

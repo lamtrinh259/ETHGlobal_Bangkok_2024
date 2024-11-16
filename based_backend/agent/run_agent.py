@@ -22,3 +22,8 @@ def run_agent(input, agent_executor, config) -> Iterator[str]:
                     handle_agent_action(name, content)
     except Exception as e:
         yield format_sse(f"Error: {str(e)}", constants.EVENT_TYPE_ERROR)
+
+def parse_result(message) -> str:
+    """Pass the user message and allow AI to think about the choices and vote based on user preferences"""
+    result = 0 # default is yes
+    return result;
