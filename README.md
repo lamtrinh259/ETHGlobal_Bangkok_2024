@@ -53,12 +53,6 @@ The verified smart contract for Flow testnet is:
 |    |  |
 The verified smart contract for Bitkub Chain testnet is:
 
-### Near Protocol testnet (chainID: 398)
-
-| Contract    |                           Contract address |
-| :---------- | -----------------------------------------: |
-|    |  |
-The verified smart contract for Near Protocol testnet is:
 
 ## Others
 
