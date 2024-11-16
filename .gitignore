@@ -39,3 +39,7 @@ next-env.d.ts
 
 # cdp
 cdp_api_key.json
+smart-contracts/broadcast/*
+smart-contracts/VoteDAOFlattened.solforge
+smart-contracts/VoteDAOFlattened.sol
+smart-contracts/veri
