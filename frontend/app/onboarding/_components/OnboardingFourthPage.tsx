@@ -114,7 +114,7 @@ export default function OnboardingFourthPage() {
 
       console.log("Vote transaction successful:", tx.hash);
       setModalTitle("Votes casted");
-      setModalText(`Vote transaction successful: ${tx.hash}`);
+      setModalText(`Vote transaction successful`);
     } catch (error) {
       console.error("Error sending vote:", error);
       setModalTitle("Failed to cast votes");
@@ -284,9 +284,11 @@ export default function OnboardingFourthPage() {
                 ✕
               </button>
             </form>
-            <h3 className="font-bold text-lg">{modalTitle}</h3>
-            <p className="py-4">{modalText}</p>
-            <div className="loader mt-4"></div>
+            <div className="text-overflow">
+              <h3 className="font-bold text-lg">{modalTitle}</h3>
+              <p className="py-4">{modalText}</p>
+              <div className="loader mt-4"></div>
+            </div>
           </div>
         </dialog>
       </main>

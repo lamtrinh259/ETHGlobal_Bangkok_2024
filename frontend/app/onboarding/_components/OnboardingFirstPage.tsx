@@ -74,8 +74,8 @@ export default function OnboardingFirstPage() {
             }
           } catch (error) {
             console.error("Airdrop failed:", error);
-          } finally {
-            closeModal();
+            setModalTitle("Airdrop failed!");
+            setModalText(`Contact us`);
           }
         };
 
