@@ -1,9 +1,10 @@
 import { generateMetadata } from "@/utils/generateMetadata";
-import OnboardingSecondPage from "../_components/OnboardingSecondPage";
+import HistoryPage from "./_components/HistoryPage";
 
 export const metadata = generateMetadata({
-  title: "Onboarding",
-  description: "Onboard to Votr",
+  title: "Build Onchain Apps Template",
+  description:
+    "Save weeks of initial app setup and the hassle of integrating onchain components with web2 infrastructure.",
   images: "themes.png",
   pathname: "",
 });
@@ -17,8 +18,8 @@ export const metadata = generateMetadata({
 export default function Page() {
   return (
     <div className="h-screen inset-0 -z-10 w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]">
-      <div className="absolute bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_2000px_at_50%_400px,#d5c5ff,transparent)]">
-        <OnboardingSecondPage />
+      <div className=" bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_2000px_at_50%_400px,#d5c5ff,transparent)]">
+        <HistoryPage />
       </div>
     </div>
   );

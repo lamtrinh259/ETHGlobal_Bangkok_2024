@@ -37,8 +37,8 @@ export default function OnboardingThirdPage() {
                   Choose Your DAOs
                 </h3>
                 <p className="text-white mt-4 text-sm">
-                  Select the communitites where you want AgentDao to vote on
-                  your behalf, you can always change it later
+                  Select the communitites where you want Votr to vote on your
+                  behalf, you can always change it later
                 </p>
                 <img className="mt-6" src={"/onboarding-2.svg"} />
               </div>

@@ -3,7 +3,7 @@ import OnboardingFourthPage from "../_components/OnboardingFourthPage";
 
 export const metadata = generateMetadata({
   title: "Onboarding",
-  description: "Onboard to AgentDao",
+  description: "Onboard to Votr",
   images: "themes.png",
   pathname: "",
 });

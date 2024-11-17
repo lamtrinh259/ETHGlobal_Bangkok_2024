@@ -2,6 +2,7 @@
 import { clsx } from "clsx";
 import NextLink from "next/link";
 import { DynamicWidget } from "@/lib/dynamic";
+import { HomeIcon, SquareIcon } from "@radix-ui/react-icons";
 
 export function NavbarLink({
   href,
@@ -43,7 +44,7 @@ export function NavbarTitle() {
         className="text-center font-medium font-robotoMono text-white text-xl no-underline"
         aria-label="build-onchain-apps Github repository"
       >
-        AgentDao
+        Votr
       </NextLink>
     </div>
   );
@@ -61,17 +62,23 @@ function Navbar() {
         <NavbarTitle />
         <div className="flex items-center justify-start gap-8">
           <ul className="hidden items-center justify-start gap-8 md:flex">
-            <li className="flex">
-              {/* <NavbarLink
-                href="https://github.com/coinbase/build-onchain-apps"
-                target="_blank"
-              >
-                <GitHubLogoIcon
+            <li className="flex hover:opacity-50">
+              <NavbarLink href="/dashboard">
+                <HomeIcon
                   width="24"
                   height="24"
                   aria-label="build-onchain-apps Github respository"
                 />
-              </NavbarLink> */}
+              </NavbarLink>
+            </li>
+            <li className="flex hover:opacity-50">
+              <NavbarLink href="/history">
+                <SquareIcon
+                  width="24"
+                  height="24"
+                  aria-label="build-onchain-apps Github respository"
+                />
+              </NavbarLink>
             </li>
             <li className="flex">
               <DynamicWidget />
