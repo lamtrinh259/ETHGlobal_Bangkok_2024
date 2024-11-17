@@ -74,7 +74,7 @@ export default function DashboardPage() {
   return (
     <>
       <Header />
-      <main className="container mx-auto flex flex-col">
+      <main className="container mx-auto flex flex-col h-screen">
         <div className="w-full flex flex-col items-center justify-center">
           {!isLoading && primaryWallet && isEthereumWallet(primaryWallet) && (
             <div className="flex flex-row w-full h-[600px]">
