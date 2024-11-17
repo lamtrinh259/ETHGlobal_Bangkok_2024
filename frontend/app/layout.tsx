@@ -6,7 +6,7 @@ import Providers from "@/lib/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DaoAgent",
+  title: "Votr",
   description: "AI Agent to vote on DAO's on your behalf",
 };
 

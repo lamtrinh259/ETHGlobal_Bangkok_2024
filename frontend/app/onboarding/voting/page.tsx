@@ -3,7 +3,7 @@ import VotingPage from "../_components/VotingPage";
 
 export const metadata = generateMetadata({
   title: "Onboarding",
-  description: "Onboard to AgentDao",
+  description: "Onboard to Votr",
   images: "themes.png",
   pathname: "",
 });

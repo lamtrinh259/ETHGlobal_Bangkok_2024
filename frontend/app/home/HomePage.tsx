@@ -12,6 +12,10 @@ export default function HomePage() {
       <Header />
       <main className="container mx-auto flex flex-col">
         <div className="w-full flex flex-col items-center justify-center h-screen">
+          <img
+            className="mb-6"
+            src="https://nouns.wtf/static/media/noggles.7644bfd0.svg"
+          />
           <h2 className="mb-10 text-center font-medium text-black text-2xl md:text-4xl lg:text-6xl">
             Empower Your Voice in DAOs with Intelligent Voting
           </h2>
