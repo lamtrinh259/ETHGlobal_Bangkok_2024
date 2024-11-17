@@ -36,7 +36,7 @@ export function NavbarTitle() {
         className="relative h-8 w-8"
         aria-label="Home page"
       >
-        <div className="absolute size-8 rounded-full bg-white" />
+        <div className="absolute size-8 rounded-full bg-purple-300"></div>
       </NextLink>
       <NextLink
         href="/"
