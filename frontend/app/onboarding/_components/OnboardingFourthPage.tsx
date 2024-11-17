@@ -106,7 +106,7 @@ export default function OnboardingFourthPage() {
       );
       const signer = new ethers.Wallet(privateKey, provider);
 
-      const voteDaoAddress = "0xf25469bdf21c06aff3f4236b8e0ca1b51c9e5ec6";
+      const voteDaoAddress = "0x4607bccaC7A2E21e6CAc8D9D12dff961F21eB17f";
       const contract = new ethers.Contract(voteDaoAddress, voteDaoAbi, signer);
 
       const tx = await contract.vote(0, 0); // proposalId = 0, voteType = 0
