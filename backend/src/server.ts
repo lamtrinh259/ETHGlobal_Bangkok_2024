@@ -58,27 +58,42 @@ app.post('/proposals', async (req: any, res: any) => {
   }
   try {
 
-    const systemPrompt = `You are an AI agent whose job is to vote on DAO governance proposals, in particular this proposal:" ${filteredProposals[0].description}" on behalf of the users.
-    You will receive a conversation from users as inputs to instruct you on the user's preferences and chat history.
+    const systemPrompt = `You are an AI agent whose job is to vote on DAO governance proposals, in particular this proposal:" ${filteredProposals[0].description}"
+    You will receive a conversation from users starting with "CHAT HISTORY STARTS NOW" and ending with "CHAT HISTORY ENDS HERE" as inputs to instruct you on the user's preferences and chat history.
     Your role is to choose the decision that aligns the most with the user's preferences.
-    There's no right or wrong answer, but the output must be in this JSON format "{vote: Yes|No|Abstain, reasoning: reason}" with vote being Yes or No or Abstain and reason being a short 1-2 sentences describing the reason why.
-    Your only answer must be the valid json as described above`
+    If you dont know the answer, just vote abstain
+    Your full response after "CHAT HISTORY ENDS HERE"  MUST be in this JSON format {vote: Yes|No|Abstain, reasoning: reason} as valid JSON with vote being Yes or No or Abstain and reason being a short 1-2 sentences describing the reason why.
+  `;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
         { role: "system", content: systemPrompt },
+        { role: "system", content: "CHAT HISTORY STARTS NOW" },
         ...chatHistory,
+        { role: "system", content: "CHAT HISTORY ENDS HERE" },
+
       ],
-      temperature: 0.7,
+      temperature: 0.1,
     });
 
-    const aiResponse = completion.choices[0].message.content;
+    let aiResponse = completion.choices[0].message.content;
     if (!aiResponse) {
+      console.log(aiResponse)
       return res.status(400).json({ error: 'Empty response from AI' });
     }
+    if ((aiResponse.startsWith('"') && aiResponse.endsWith('"')) ||
+      (aiResponse.startsWith("'") && aiResponse.endsWith("'"))) {
+      aiResponse = aiResponse.slice(1, -1);
+    }
+    console.log(aiResponse)
+    const jsonMatch = aiResponse.match(/\{[^]*\}/);
+    if (!jsonMatch) {
+      console.error('No JSON object found in:', aiResponse);
+      return res.status(400).json({ error: 'No valid JSON found in AI response' });
+    }
 
-    const parsedResponse = JSON.parse(aiResponse);
+    const parsedResponse = JSON.parse(jsonMatch[0]);
 
     if (!parsedResponse.vote || !parsedResponse.reasoning ||
       !['YES', 'NO', 'ABSTAIN'].includes(parsedResponse.vote.toUpperCase())) {
@@ -90,6 +105,7 @@ app.post('/proposals', async (req: any, res: any) => {
       'NO': 1,
       'ABSTAIN': 2
     };
+
 
 
     const proposalsWithRecommendations = filteredProposals.map(proposal => ({

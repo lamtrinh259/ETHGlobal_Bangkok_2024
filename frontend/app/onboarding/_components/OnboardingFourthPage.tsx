@@ -1,15 +1,17 @@
 "use client";
-import Header from "@/components/layout/header/Header";
-import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import {
   DynamicWidget,
   useDynamicContext,
   useIsLoggedIn,
 } from "@dynamic-labs/sdk-react-core";
 import { useEffect, useState } from "react";
-import NextLink from "next/link";
 import { fetchQuestions, Question } from "@/api/questionService";
-import { fetchProposals, Proposal } from "@/api/proposalService";
+import { Proposal } from "@/api/proposalService";
+import { useRouter } from "next/navigation";
+import { ethers } from "ethers";
+import { isEthereumWallet } from "@dynamic-labs/ethereum";
+import Header from "@/components/layout/header/Header";
+import NextLink from "next/link";
 
 export default function OnboardingFourthPage() {
   const isLoggedIn = useIsLoggedIn();
@@ -21,17 +23,32 @@ export default function OnboardingFourthPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [proposals, setProposals] = useState<Proposal[] | null>(null);
   const [isAgentTyping, setIsAgentTyping] = useState(false);
+  const router = useRouter();
+  const [modalTitle, setModalTitle] = useState("Learning your ways");
+  const [modalText, setModalText] = useState(
+    "Please wait while we understand you at a deeper level..."
+  );
 
-  // const questions = [
-  //   "What are your voting priorities?",
-  //   "Which DAOs are most important to you?",
-  //   "How often do you want your agent to vote?",
-  // ];
+  const openModal = () => {
+    const modal = document.getElementById("my_modal_2") as HTMLDialogElement;
+    if (modal) modal.showModal();
+  };
 
-  const selectedDaos = ["Web3 for Good DAO"];
+  const closeModal = () => {
+    const modal = document.getElementById("my_modal_2") as HTMLDialogElement;
+    if (modal) modal.close();
+  };
+
+  const selectedDaos = ["charitydao"];
 
   useEffect(() => {
     if (sdkHasLoaded && isLoggedIn && primaryWallet) {
+      const privateKey: `0x${string}` | null = localStorage.getItem(
+        primaryWallet?.address || ""
+      ) as `0x${string}` | null;
+      if (!privateKey) {
+        router.replace("/boarding/1");
+      }
       setIsLoading(false);
       fetchQuestions(selectedDaos).then((data) => {
         setQuestions(data.questions);
@@ -68,14 +85,94 @@ export default function OnboardingFourthPage() {
     }, randomDelay);
   };
 
-  const sendChatHistory = async () => {
+  const voteDaoAbi = [
+    "function vote(uint256 proposalId, uint8 voteType) external",
+  ];
+
+  const castVotes = async (proposals?: Proposal[]) => {
+    setModalTitle("Casting your votes");
+    setModalText("Please wait while we cast your votes...");
     try {
-      const data = await fetchProposals(chatHistory, selectedDaos);
-      setProposals(data.proposals);
+      const privateKey = localStorage.getItem(
+        primaryWallet?.address ?? ""
+      ) as string;
+      if (!privateKey) {
+        console.error("No private key found");
+        return;
+      }
+
+      const provider = new ethers.JsonRpcProvider(
+        process.env.NEXT_PUBLIC_RPC_URL
+      );
+      const signer = new ethers.Wallet(privateKey, provider);
+
+      const voteDaoAddress = "0xf25469bdf21c06aff3f4236b8e0ca1b51c9e5ec6";
+      const contract = new ethers.Contract(voteDaoAddress, voteDaoAbi, signer);
+
+      const tx = await contract.vote(0, 0); // proposalId = 0, voteType = 0
+      await tx.wait();
+
+      console.log("Vote transaction successful:", tx.hash);
+      setModalTitle("Votes casted");
+      setModalText(`Vote transaction successful: ${tx.hash}`);
+    } catch (error) {
+      console.error("Error sending vote:", error);
+      setModalTitle("Failed to cast votes");
+      setModalText(`Something went wrong, please contact us`);
+    }
+  };
+
+  const sendChatHistory = async () => {
+    openModal();
+    try {
+      // Transform chatHistory into the desired format
+      const formattedChatHistory = chatHistory.map((entry) => {
+        if (entry.startsWith("User:")) {
+          return { role: "user", content: entry.replace("User:", "").trim() };
+        } else {
+          return { role: "assistant", content: entry.trim() };
+        }
+      });
+
+      const payload = {
+        chatHistory: formattedChatHistory,
+        selectedDaos, // Assuming `selectedDaos` is already defined
+      };
+
+      console.log("Payload to be sent:", payload);
+
+      // Make the API call with the transformed chatHistory
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/proposals`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await response.json();
+      console.log("results", result);
+      setProposals(result);
+      // todo: pop up indicating vote is happening
+      castVotes(result.proposals);
+
+      console.log("API Response:", result);
     } catch (error) {
       console.error("Error sending chat history:", error);
     }
   };
+
+  // const sendChatHistory = async () => {
+  //   try {
+  //     const data = await fetchProposals(chatHistory, selectedDaos);
+  //     setProposals(data.proposals);
+  //     // todo: pop up indicating vote is happening
+  //     castVotes(data.proposals);
+  //   } catch (error) {
+  //     console.error("Error sending chat history:", error);
+  //   }
+  // };
 
   return (
     <>
@@ -161,7 +258,7 @@ export default function OnboardingFourthPage() {
                 </div>
                 {/* Proceed Button */}
                 <div className="flex flex-row-reverse mt-8 pr-8 w-full mr-4 mb-8">
-                  <NextLink href="/onboarding/voting">
+                  <NextLink href="/dashboard">
                     <button
                       className="btn btn-outline btn-lg rounded-full p-4 text-black"
                       disabled={currentQuestionIndex < questions.length}
@@ -175,6 +272,19 @@ export default function OnboardingFourthPage() {
           )}
           {isLoading && <DynamicWidget />}
         </div>
+        <dialog id="my_modal_2" className="modal">
+          <div className="modal-box flex flex-col items-center">
+            <form method="dialog">
+              {/* if there is a button in form, it will close the modal */}
+              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                ✕
+              </button>
+            </form>
+            <h3 className="font-bold text-lg">{modalTitle}</h3>
+            <p className="py-4">{modalText}</p>
+            <div className="loader mt-4"></div>
+          </div>
+        </dialog>
       </main>
     </>
   );

@@ -20,22 +20,67 @@ export default function OnboardingFirstPage() {
   const { sdkHasLoaded, primaryWallet } = useDynamicContext();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDaos, setSelectedDaos] = useState<string[]>([]);
+  const [modalTitle, setModalTitle] = useState("Processing Airdrop");
+  const [modalText, setModalText] = useState(
+    "Please wait while we airdrop your voting tokens..."
+  );
 
-  let privateKey: `0x${string}` | null = localStorage.getItem("cachedValue") as
-    | `0x${string}`
-    | null;
-  if (!privateKey) {
-    privateKey = generatePrivateKey();
-    // todo call backend to airdrop tokens
-  }
+  const openModal = () => {
+    const modal = document.getElementById("my_modal_2") as HTMLDialogElement;
+    if (modal) modal.showModal();
+  };
 
-  const account = privateKeyToAccount(`${privateKey}`);
-  localStorage.setItem("cachedValue", privateKey);
-
-  // TODO: POPUP for gaining voting right
+  const closeModal = () => {
+    const modal = document.getElementById("my_modal_2") as HTMLDialogElement;
+    if (modal) modal.close();
+  };
 
   useEffect(() => {
     if (sdkHasLoaded && isLoggedIn && primaryWallet) {
+      let privateKey: `0x${string}` | null = localStorage.getItem(
+        primaryWallet?.address || ""
+      ) as `0x${string}` | null;
+      if (!privateKey) {
+        privateKey = generatePrivateKey();
+        localStorage.setItem(primaryWallet?.address, privateKey);
+
+        const wallet = privateKeyToAccount(privateKey);
+
+        const generateWalletAndAirdrop = async () => {
+          openModal();
+          try {
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/airdrop`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  walletAddress: wallet.address,
+                  signature: "0x",
+                }),
+              }
+            );
+
+            const data = await response.json();
+            if (data.success) {
+              setModalTitle("Airdrop successful!");
+              setModalText(`ethTx: ${data.ethTxHash}`);
+              console.log("Airdrop successful!", {
+                tokenTx: data.tokenTxHash,
+                ethTx: data.ethTxHash,
+              });
+            }
+          } catch (error) {
+            console.error("Airdrop failed:", error);
+          } finally {
+            closeModal();
+          }
+        };
+
+        generateWalletAndAirdrop();
+      }
       setIsLoading(false);
     } else {
       setIsLoading(true);
@@ -152,6 +197,19 @@ export default function OnboardingFirstPage() {
           )}
           {isLoading && <DynamicWidget />}
         </div>
+        <dialog id="my_modal_2" className="modal">
+          <div className="modal-box flex flex-col items-center">
+            <form method="dialog">
+              {/* if there is a button in form, it will close the modal */}
+              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                ✕
+              </button>
+            </form>
+            <h3 className="font-bold text-lg">{modalTitle}</h3>
+            <p className="py-4">{modalText}</p>
+            <div className="loader mt-4"></div>
+          </div>
+        </dialog>
       </main>
     </>
   );

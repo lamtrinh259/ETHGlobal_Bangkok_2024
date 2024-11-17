@@ -1,5 +1,5 @@
 export const mockQuestions =[
-    { id: '1', text: 'What are your voting priorities?' },
-    { id: '2', text: 'Which DAOs are most important to you?' },
-    { id: '3', text: 'How often do you want your agent to vote?' },
+    { id: '1', text: 'Should DAOs focus more on social goods?' },
+    { id: '2', text: 'Do you think small contributions, can make a meaningful difference?' },
+    { id: '3', text: 'Do you think 10$ is better spent social good, buying coffee for the team, or something else? Be honest!'}
   ];

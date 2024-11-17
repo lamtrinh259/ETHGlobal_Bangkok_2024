@@ -1,7 +1,5 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://152.53.36.131:9999";
-
 export interface Proposal {
   dao: string;
   proposal: string;
@@ -25,7 +23,7 @@ export const fetchProposals = async (
 ): Promise<FetchProposalsResponse> => {
   try {
     const response = await axios.post<FetchProposalsResponse>(
-      `${API_BASE_URL}/proposals`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/proposals`,
       {
         chatHistory: JSON.stringify(chatHistory),
         selectedDaos,
